@@ -1,0 +1,9 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# OS / editores
+.DS_Store
+Thumbs.db
+*.tmp
+.vscode/
