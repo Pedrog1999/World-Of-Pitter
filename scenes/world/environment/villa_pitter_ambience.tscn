@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Environment" path="res://scenes/world/environment/villa_pitter_environment.tres" id="1_env"]
+
+[node name="VillaPitterAmbience" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("1_env")
+
+[node name="Luna" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.766044, -0.413176, 0.492404, 0, 0.766044, 0.642788, -0.642788, -0.492404, 0.586824, 0, 20, 0)
+light_color = Color(0.62, 0.72, 0.92, 1)
+light_energy = 1.3
+light_indirect_energy = 0.6
+light_volumetric_fog_energy = 1.3
+light_angular_distance = 0.0
+shadow_enabled = true
+shadow_bias = 0.03
+shadow_normal_bias = 1.2
+shadow_opacity = 0.92
+shadow_blur = 0.6
+directional_shadow_mode = 2
+directional_shadow_max_distance = 70.0
