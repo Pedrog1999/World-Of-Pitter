@@ -1,4 +1,4 @@
-[gd_resource type="Environment" load_steps=3 format=3]
+[gd_resource type="Environment" format=3 uid="uid://df74jqebh555l"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_noche"]
 sky_top_color = Color(0.09, 0.11, 0.16, 1)
@@ -10,7 +10,6 @@ ground_horizon_color = Color(0.26, 0.26, 0.29, 1)
 ground_curve = 0.08
 sun_angle_max = 6.0
 sun_curve = 0.25
-use_debanding = true
 
 [sub_resource type="Sky" id="Sky_noche"]
 sky_material = SubResource("ProceduralSkyMaterial_noche")
@@ -42,19 +41,17 @@ fog_sun_scatter = 0.15
 fog_density = 1.0
 fog_aerial_perspective = 0.35
 fog_sky_affect = 0.6
+fog_depth_curve = 1.4
 fog_depth_begin = 25.0
 fog_depth_end = 140.0
-fog_depth_curve = 1.4
 volumetric_fog_enabled = true
 volumetric_fog_density = 0.018
 volumetric_fog_albedo = Color(0.62, 0.66, 0.74, 1)
 volumetric_fog_emission = Color(0.03, 0.035, 0.05, 1)
 volumetric_fog_anisotropy = 0.4
 volumetric_fog_length = 80.0
-volumetric_fog_detail_spread = 2.0
 volumetric_fog_ambient_inject = 0.25
 volumetric_fog_sky_affect = 0.3
 adjustment_enabled = true
-adjustment_brightness = 1.0
 adjustment_contrast = 1.18
 adjustment_saturation = 0.72

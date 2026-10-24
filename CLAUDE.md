@@ -14,6 +14,20 @@ El juego arranca en **Villa Pitter**, un pueblo medieval oscuro.
 - **Villa Pitter**: casas de madera y piedra, calles de tierra/adoquín, taberna, herrería, templo, plaza
   central, cementerio en las afueras, muralla o empalizada y bosque oscuro alrededor.
 
+## Decisiones de jugabilidad
+
+- Movimiento con **WASD/flechas en 8 direcciones**, relativo a los ejes del mundo (arriba = -Z).
+- **Cámara fija**: ángulo cenital sin rotación, solo zoom con la rueda del mouse.
+- **Sin salto y sin correr**: una sola velocidad de caminata.
+- **Terreno medianamente llano**: pendientes suaves (< 25–30°) que se suben caminando. Los cambios de
+  altura van por rampas o escaleras (con una rampa de colisión invisible debajo de los escalones).
+  Barrancos, rocas o agua funcionan como bordes naturales en lugar de paredes invisibles.
+- **Interiores visibles** (como en AO): al entrar a un edificio, el techo y los pisos superiores se
+  desvanecen y las paredes del lado de la cámara quedan traslúcidas.
+- **Oclusión**: si un edificio tapa al jugador desde la cámara, ese edificio se vuelve traslúcido.
+- Assets base: Quaternius Medieval Village MegaKit (CC0) en `assets/models/medieval_village/`,
+  piezas modulares en grilla de 2 m (paredes de 2×3 m).
+
 ## Estructura de carpetas
 
 ```
