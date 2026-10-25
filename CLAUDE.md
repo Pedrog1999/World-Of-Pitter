@@ -66,10 +66,27 @@ Hacer en este orden; cada paso jugable, con commit + push al terminar:
    que modifican stats. Items como `Resource` en `data/items/`.
 4. ✅ **Items en el mundo**: monstruos/muñecos que sueltan items, juntar con una tecla, tirar.
 
-**Pendiente: pulir el diseño de la interfaz.** Hoy es funcional pero flaco: marcos planos de
-StyleBoxFlat, fuente por defecto e íconos provisorios (cuadro de color + iniciales). Falta darle
-peso medieval: texturas o 9-slice de madera/piedra, una fuente con carácter, íconos de items y
-hechizos, y más jerarquía visual en el panel derecho.
+**Pendiente: pulir el diseño de la interfaz.** Ya usa las texturas del pack RPG Inventory
+(`assets/textures/ui/rpg_inventory/`). Faltan una fuente con carácter, íconos de items y hechizos,
+y más jerarquía visual en el panel derecho.
+
+### Ideas para la próxima sesión (anotadas el 2026-10-25)
+
+- **Macros de hechizos**: que el jugador elija en qué macro numérica (1-9) pone cada hechizo de
+  forma más directa. Hoy se hace con clic en el hechizo y después en la macro; mejorar ese flujo
+  (por ejemplo arrastrar, o elegir el hechizo y apretar el número).
+- **Maná**: acortar la regeneración pasiva de maná y agregar el comando **/meditar**: el personaje
+  se sienta a meditar (sin poder moverse ni atacar) y recarga maná mucho más rápido. Hace falta
+  una consola o caja de chat para escribir comandos.
+- **Imágenes de items**: íconos de verdad para el inventario (y hechizos) en lugar del cuadro de
+  color con iniciales; cada `ItemData` ya tiene el campo `icon`.
+- **Nivel y experiencia**: revisar la curva de experiencia, qué da cada nivel (vida, maná,
+  daño...), y fuentes de experiencia además de los muñecos.
+- **Terminar el pueblo principal** (Villa Pitter): casas, calles, plaza, taberna, herrería,
+  templo, cementerio, muralla y bosque alrededor.
+- **Templo de reaparición**: al morir, el personaje reaparece en el templo (asignar un
+  `Marker3D` del templo a `respawn_point`) y se muestra un **toast** (aviso que aparece y se va
+  solo) avisando que fue resucitado / que se está regenerando.
 
 Después: la ciudad (Villa Pitter completa, faltan packs de props/naturaleza) y monstruos reales.
 
