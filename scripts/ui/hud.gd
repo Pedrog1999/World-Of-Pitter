@@ -4,7 +4,7 @@ extends CanvasLayer
 ## Panel, de arriba a abajo:
 ## - Datos personales: nombre, clase, nivel y experiencia.
 ## - Pestañas Inventario / Hechizos (hechizos conocidos y macros 1-9).
-## - Estado: vida, maná y oro.
+## - Estado: vida, maná, oro, daño y defensa.
 ## - Minimapa.
 ## Sobre la zona de juego quedan la ayuda de controles y el aviso de muerte.
 
@@ -21,6 +21,7 @@ var _health_label: Label
 var _mana_bar: ProgressBar
 var _mana_label: Label
 var _gold_label: Label
+var _combat_label: Label
 var _mana_flash: Tween
 var _tab_buttons: Array[Button] = []
 var _tab_pages: Array[Control] = []
@@ -50,6 +51,8 @@ func _ready() -> void:
 	player.health.damaged.connect(_refresh_health.unbind(2))
 	player.health.healed.connect(_refresh_health.unbind(1))
 	player.health.died.connect(_refresh_health)
+	player.health.max_health_changed.connect(_refresh_health.unbind(1))
+	player.equipment.changed.connect(_refresh_combat)
 	player.mana.changed.connect(_refresh_mana.unbind(2))
 	player.not_enough_mana.connect(_on_not_enough_mana.unbind(1))
 	player.gold_changed.connect(_refresh_gold.unbind(1))
@@ -59,6 +62,7 @@ func _ready() -> void:
 	_refresh_health()
 	_refresh_mana()
 	_refresh_gold()
+	_refresh_combat()
 
 	get_tree().call_group.call_deferred("camara_juego", "set_right_margin", PANEL_WIDTH)
 
@@ -178,13 +182,18 @@ func _make_stats() -> Control:
 	_mana_bar = mana_parts[0]
 	_mana_label = mana_parts[1]
 	column.add_child(_mana_bar)
+	var row := HBoxContainer.new()
+	column.add_child(row)
 	_gold_label = UiStyle.label("", 14, UiStyle.GOLD)
-	column.add_child(_gold_label)
+	_gold_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(_gold_label)
+	_combat_label = UiStyle.label("", 13, UiStyle.TEXT_DIM)
+	row.add_child(_combat_label)
 	return UiStyle.section(column)
 
 
 func _make_help(game_area: Control) -> void:
-	var help := UiStyle.label("WASD mover  ·  Ctrl golpe  ·  1-9 macro  ·  Clic izq. lanzar  ·  Rueda zoom", 13, Color(0.75, 0.75, 0.72, 0.8))
+	var help := UiStyle.label("WASD mover  ·  Ctrl golpe  ·  1-9 macro  ·  Clic izq. lanzar  ·  U usar item  ·  Rueda zoom", 13, Color(0.75, 0.75, 0.72, 0.8))
 	if OS.is_debug_build():
 		help.text += "  ·  F9 recibir daño (prueba)"
 	game_area.add_child(help)
@@ -237,6 +246,11 @@ func _refresh_mana() -> void:
 
 func _refresh_gold() -> void:
 	_gold_label.text = "Oro: %d" % player.gold
+
+
+func _refresh_combat() -> void:
+	var spell_bonus := player.equipment.total(&"spell_damage_bonus")
+	_combat_label.text = "Golpe %d  ·  Magia +%d  ·  Def %d" % [player.melee_damage_total(), spell_bonus, player.health.armor]
 
 
 func _on_not_enough_mana() -> void:

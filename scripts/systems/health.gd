@@ -2,16 +2,19 @@ class_name Health
 extends Node
 ## Vida reutilizable para cualquier entidad (jugador, esbirros, enemigos, muñecos).
 ## Se agrega como nodo hijo llamado "Health". Opcionalmente se regenera con el tiempo.
+## La defensa (`armor`) resta daño a cada golpe, pero siempre entra al menos 1.
 
 signal damaged(amount: int, source: Node)
 signal healed(amount: int)
 signal died
+signal max_health_changed(max_health: int)
 
 @export var max_health: int = 50
 ## Vida recuperada por segundo (0 = no se regenera).
 @export var regen_per_second: float = 0.0
 ## Segundos sin recibir daño antes de empezar a regenerar.
 @export var regen_delay: float = 0.0
+@export var armor: int = 0
 
 var current: int
 ## Quién hizo el último daño (para dar experiencia o botín a quien lo mató).
@@ -51,6 +54,7 @@ func _physics_process(delta: float) -> void:
 func take_damage(amount: int, source: Node = null) -> void:
 	if is_dead:
 		return
+	amount = maxi(amount - armor, 1)
 	_since_damage = 0.0
 	last_source = source
 	current = maxi(current - amount, 0)
@@ -67,6 +71,13 @@ func heal(amount: int) -> void:
 		return
 	current += healed_amount
 	healed.emit(healed_amount)
+
+
+## Cambia la vida máxima sin curar (la actual se recorta si queda por encima).
+func set_max_health(value: int) -> void:
+	max_health = maxi(value, 1)
+	current = mini(current, max_health)
+	max_health_changed.emit(max_health)
 
 
 func reset() -> void:

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+display_name = "Túnica del sepulcro"
+description = "Todavía tiene tierra de la tumba."
+kind = 4
+color = Color(0.3, 0.36, 0.26, 1)
+value = 45
+armor = 3
+max_health_bonus = 20

@@ -60,7 +60,7 @@ Hacer en este orden; cada paso jugable, con commit + push al terminar:
    - Abajo: **minimapa**.
    - Mantener la estética oscura medieval (marcos de madera/piedra, texto claro). La barra de
      hechizos actual (`scripts/ui/hud.gd`) se integra a este panel.
-3. **Inventario y equipo**: grilla de items, oro, slots de equipo (arma, casco, armadura, escudo)
+3. ✅ **Inventario y equipo**: grilla de items, oro, slots de equipo (arma, casco, armadura, escudo)
    que modifican stats. Items como `Resource` en `data/items/`.
 4. **Items en el mundo**: monstruos/muñecos que sueltan items, juntar con una tecla, tirar.
 

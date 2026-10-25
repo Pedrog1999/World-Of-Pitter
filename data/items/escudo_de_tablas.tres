@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+display_name = "Escudo de tablas"
+description = "Madera vieja reforzada con clavos."
+kind = 5
+color = Color(0.45, 0.31, 0.17, 1)
+value = 30
+armor = 2

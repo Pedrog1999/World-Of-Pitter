@@ -6,6 +6,8 @@ extends Area3D
 var spell: SpellData
 var caster: Node3D
 var direction: Vector3 = Vector3.FORWARD
+## Daño final (el del hechizo más las bonificaciones del lanzador).
+var damage: int = 0
 
 var _traveled: float = 0.0
 
@@ -13,8 +15,9 @@ var _traveled: float = 0.0
 @onready var light: OmniLight3D = $Luz
 
 
-func setup(p_spell: SpellData, p_caster: Node3D, p_direction: Vector3) -> void:
+func setup(p_spell: SpellData, p_caster: Node3D, p_direction: Vector3, p_damage: int = -1) -> void:
 	spell = p_spell
+	damage = p_spell.damage if p_damage < 0 else p_damage
 	caster = p_caster
 	direction = p_direction.normalized()
 
@@ -44,7 +47,7 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	var health := Health.of(body)
 	if health and not health.is_dead:
-		health.take_damage(spell.damage, caster)
+		health.take_damage(damage, caster)
 		if is_instance_valid(caster) and caster.has_method("set_target"):
 			caster.set_target(body)
 	_vanish()

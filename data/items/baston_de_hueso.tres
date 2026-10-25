@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+display_name = "Bastón de hueso"
+description = "Fémur tallado con runas necróticas."
+kind = 2
+color = Color(0.8, 0.76, 0.62, 1)
+value = 60
+melee_damage_bonus = 4
+spell_damage_bonus = 3

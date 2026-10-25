@@ -11,6 +11,14 @@
 [ext_resource type="PackedScene" path="res://assets/models/personajes/nigromante/nigromante.glb" id="9_modelo"]
 [ext_resource type="Script" path="res://scripts/systems/mana.gd" id="10_mana"]
 [ext_resource type="Script" path="res://scripts/systems/progression.gd" id="11_progression"]
+[ext_resource type="Script" path="res://scripts/systems/inventory.gd" id="12_inventory"]
+[ext_resource type="Script" path="res://scripts/systems/equipment.gd" id="13_equipment"]
+[ext_resource type="Script" path="res://scripts/systems/item_data.gd" id="14_itemdata"]
+[ext_resource type="Resource" path="res://data/items/pocion_roja.tres" id="15_pocion_roja"]
+[ext_resource type="Resource" path="res://data/items/pocion_azul.tres" id="16_pocion_azul"]
+[ext_resource type="Resource" path="res://data/items/baston_de_hueso.tres" id="17_baston_de_hueso"]
+[ext_resource type="Resource" path="res://data/items/capucha_rasgada.tres" id="18_capucha_rasgada"]
+[ext_resource type="Resource" path="res://data/items/tunica_del_sepulcro.tres" id="19_tunica_del_sepulcro"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_cuerpo"]
 radius = 0.35
@@ -42,6 +50,13 @@ regen_per_second = 5.0
 
 [node name="Progression" type="Node" parent="."]
 script = ExtResource("11_progression")
+
+[node name="Inventory" type="Node" parent="."]
+script = ExtResource("12_inventory")
+starting_items = Array[ExtResource("14_itemdata")]([ExtResource("15_pocion_roja"), ExtResource("15_pocion_roja"), ExtResource("15_pocion_roja"), ExtResource("15_pocion_roja"), ExtResource("15_pocion_roja"), ExtResource("16_pocion_azul"), ExtResource("16_pocion_azul"), ExtResource("16_pocion_azul"), ExtResource("16_pocion_azul"), ExtResource("16_pocion_azul"), ExtResource("17_baston_de_hueso"), ExtResource("18_capucha_rasgada"), ExtResource("19_tunica_del_sepulcro")])
+
+[node name="Equipment" type="Node" parent="."]
+script = ExtResource("13_equipment")
 
 [node name="Visual" type="Node3D" parent="." node_paths=PackedStringArray("animation_player")]
 script = ExtResource("8_animator")

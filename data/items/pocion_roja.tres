@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+display_name = "Poción roja"
+description = "Un brebaje espeso que cierra heridas."
+kind = 1
+color = Color(0.7, 0.12, 0.1, 1)
+max_stack = 50
+value = 8
+heal_amount = 40

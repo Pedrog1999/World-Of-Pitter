@@ -10,11 +10,14 @@ extends CharacterBody3D
 ## - Los hechizos gastan maná. Vida y maná se regeneran solos. Al morir reaparece
 ##   en la plaza (`respawn_point`, o donde arrancó si no hay uno asignado).
 ## - Gana experiencia al matar; cada nivel sube la vida y el maná máximos.
+## - Inventario y equipo: doble clic (o U) sobre un item lo usa o se lo pone. El equipo
+##   suma daño, defensa, vida y maná.
 
 signal target_changed(target: Node3D)
 signal macro_selected(index: int)
 signal macros_changed
 signal gold_changed(gold: int)
+signal inventory_slot_selected(index: int)
 ## El hechizo no se lanzó porque falta maná.
 signal not_enough_mana(spell: SpellData)
 signal died
@@ -60,6 +63,8 @@ var selected_macro: int = 0
 ## Hechizo de cada macro (1-9); null = macro vacía.
 var macros: Array[SpellData] = []
 var gold: int = 0
+## Casillero del inventario elegido (-1 = ninguno).
+var selected_slot: int = -1
 var minions: Array[Node3D] = []
 var is_dead: bool = false
 
@@ -70,18 +75,25 @@ var _cooldowns: Dictionary[SpellData, float] = {}
 ## Mientras es > 0 el personaje está golpeando o lanzando y no puede moverse.
 var _action_lock: float = 0.0
 var _spawn_transform: Transform3D
+var _base_max_health: int
+var _base_max_mana: int
 
 @onready var visual: Node3D = $Visual
 @onready var animator: ModelAnimator = $Visual
 @onready var health: Health = $Health
 @onready var mana: Mana = $Mana
 @onready var progression: Progression = $Progression
+@onready var inventory: Inventory = $Inventory
+@onready var equipment: Equipment = $Equipment
 
 
 func _ready() -> void:
 	_spawn_transform = global_transform
 	health.died.connect(_on_died)
 	progression.leveled_up.connect(_on_leveled_up)
+	_base_max_health = health.max_health
+	_base_max_mana = mana.max_mana
+	equipment.changed.connect(_recalculate_stats)
 	macros.resize(MACRO_COUNT)
 	for i in mini(known_spells.size(), MACRO_COUNT):
 		macros[i] = known_spells[i]
@@ -124,6 +136,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Solo para probar la muerte mientras no haya monstruos que peguen.
 	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo 			and event.keycode == KEY_F9:
 		health.take_damage(25, null)
+	elif event.is_action_pressed("use_item"):
+		use_item(selected_slot)
 	elif event.is_action_pressed("melee"):
 		_melee()
 	elif event.is_action_pressed("cast_spell"):
@@ -156,6 +170,47 @@ func spell_cooldown_ratio(spell: SpellData) -> float:
 	if spell == null or spell.cooldown <= 0.0:
 		return 0.0
 	return _cooldowns.get(spell, 0.0) / spell.cooldown
+
+
+func select_inventory_slot(index: int) -> void:
+	selected_slot = index
+	inventory_slot_selected.emit(index)
+
+
+## Usa el item del casillero: los consumibles se gastan y el equipo se pone
+## (lo que estaba puesto vuelve a ese mismo casillero).
+func use_item(index: int) -> void:
+	var item := inventory.get_item(index)
+	if is_dead or item == null:
+		return
+	if item.kind == ItemData.Kind.CONSUMABLE:
+		if item.heal_amount > 0:
+			health.heal(item.heal_amount)
+		if item.mana_amount > 0:
+			mana.restore(item.mana_amount)
+		inventory.remove_at(index, 1)
+	elif item.is_equipment():
+		inventory.remove_at(index)
+		var previous := equipment.equip(item)
+		if previous:
+			inventory.put_at(index, previous)
+
+
+## Se saca el equipo del slot y lo guarda en el inventario (si hay lugar).
+func unequip(slot: ItemData.Kind) -> void:
+	var item := equipment.get_equipped(slot)
+	if is_dead or item == null or not inventory.has_space_for(item):
+		return
+	equipment.unequip(slot)
+	inventory.add_item(item)
+
+
+func melee_damage_total() -> int:
+	return melee_damage + equipment.total(&"melee_damage_bonus")
+
+
+func spell_damage_total(spell: SpellData) -> int:
+	return spell.damage + equipment.total(&"spell_damage_bonus")
 
 
 func gain_experience(amount: int) -> void:
@@ -219,10 +274,17 @@ func _spawn_minions() -> void:
 
 func _on_leveled_up(level: int) -> void:
 	DamageNumber.spawn_text(get_parent(), global_position + Vector3.UP * 2.8, "¡Nivel %d!" % level, UiStyle.GOLD)
-	health.max_health += health_per_level
-	mana.max_mana += mana_per_level
+	_recalculate_stats()
 	health.reset()
 	mana.refill()
+
+
+## Vida y maná máximos = base + niveles + equipo. La defensa sale del equipo.
+func _recalculate_stats() -> void:
+	var levels := progression.level - 1
+	health.set_max_health(_base_max_health + levels * health_per_level + equipment.total(&"max_health_bonus"))
+	mana.set_max_mana(_base_max_mana + levels * mana_per_level + equipment.total(&"max_mana_bonus"))
+	health.armor = equipment.total(&"armor")
 
 
 func _on_died() -> void:
@@ -282,7 +344,7 @@ func _melee() -> void:
 			best_distance = distance
 
 	if best:
-		Health.of(best).take_damage(melee_damage, self)
+		Health.of(best).take_damage(melee_damage_total(), self)
 		set_target(best)
 
 
@@ -317,7 +379,7 @@ func _cast_selected_spell() -> void:
 		return
 
 	var projectile: SpellProjectile = projectile_scene.instantiate()
-	projectile.setup(spell, self, direction)
+	projectile.setup(spell, self, direction, spell_damage_total(spell))
 	get_parent().add_child(projectile)
 	projectile.global_position = global_position + direction * 0.6 + Vector3.UP * CAST_HEIGHT
 

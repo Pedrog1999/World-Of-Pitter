@@ -47,6 +47,17 @@ func spend(amount: int) -> bool:
 	return true
 
 
+func restore(amount: int) -> void:
+	if amount > 0:
+		_set_current(current + amount)
+
+
+## Cambia el maná máximo (el actual se recorta si queda por encima).
+func set_max_mana(value: int) -> void:
+	max_mana = maxi(value, 0)
+	_set_current(current)
+
+
 func refill() -> void:
 	_set_current(max_mana)
 
