@@ -45,6 +45,25 @@ El juego arranca en **Villa Pitter**, un pueblo medieval oscuro.
 - Assets base: Quaternius Medieval Village MegaKit (CC0) en `assets/models/medieval_village/`,
   piezas modulares en grilla de 2 m (paredes de 2×3 m).
 
+## Próximos pasos (plan acordado)
+
+Hacer en este orden; cada paso jugable, con commit + push al terminar:
+
+1. **Vida y maná del jugador**: los hechizos gastan maná (agregar `mana_cost` a `SpellData`),
+   regeneración, muerte y reaparición en la plaza.
+2. **Interfaz estilo AO con paneles fijos a la derecha** de la pantalla (el juego ocupa el resto):
+   - Arriba: pestañas **Inventario / Hechizos**. En Hechizos, la lista de hechizos conocidos que se
+     asignan a las macros 1-9.
+   - Medio: **stats** (vida, maná, nivel, experiencia, oro).
+   - Abajo: **minimapa**.
+   - Mantener la estética oscura medieval (marcos de madera/piedra, texto claro). La barra de
+     hechizos actual (`scripts/ui/hud.gd`) se integra a este panel.
+3. **Inventario y equipo**: grilla de items, oro, slots de equipo (arma, casco, armadura, escudo)
+   que modifican stats. Items como `Resource` en `data/items/`.
+4. **Items en el mundo**: monstruos/muñecos que sueltan items, juntar con una tecla, tirar.
+
+Después: la ciudad (Villa Pitter completa, faltan packs de props/naturaleza) y monstruos reales.
+
 ## Estructura de carpetas
 
 ```
