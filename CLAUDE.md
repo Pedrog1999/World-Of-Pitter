@@ -66,6 +66,11 @@ Hacer en este orden; cada paso jugable, con commit + push al terminar:
    que modifican stats. Items como `Resource` en `data/items/`.
 4. ✅ **Items en el mundo**: monstruos/muñecos que sueltan items, juntar con una tecla, tirar.
 
+**Pendiente: pulir el diseño de la interfaz.** Hoy es funcional pero flaco: marcos planos de
+StyleBoxFlat, fuente por defecto e íconos provisorios (cuadro de color + iniciales). Falta darle
+peso medieval: texturas o 9-slice de madera/piedra, una fuente con carácter, íconos de items y
+hechizos, y más jerarquía visual en el panel derecho.
+
 Después: la ciudad (Villa Pitter completa, faltan packs de props/naturaleza) y monstruos reales.
 
 ## Estructura de carpetas
