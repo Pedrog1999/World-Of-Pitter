@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpellData" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/spell_data.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+display_name = "Calavera Sombría"
+damage = 14
+cooldown = 2.0
+speed = 11.0
+max_range = 14.0
+color = Color(0.65, 0.35, 1, 1)
+projectile_scale = 1.6
+animation = &"hechizo_2h_magic_attack_01"
+animation_speed = 1.5
+release_time = 1.33

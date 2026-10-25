@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SpellData" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/spell_data.gd" id="1_spell"]
+
+[resource]
+script = ExtResource("1_spell")
+display_name = "Dardo Necrótico"
+damage = 6
+cooldown = 1.0
+speed = 18.0
+max_range = 18.0
+color = Color(0.45, 1, 0.35, 1)
+projectile_scale = 1.0
+animation = &"hechizo_1h_cast_spell_01"
+animation_speed = 1.8
+release_time = 0.8

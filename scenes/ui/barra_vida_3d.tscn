@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/health_bar_3d.gd" id="1_0ro7s"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h30gm"]
+render_priority = 1
+no_depth_test = true
+shading_mode = 0
+albedo_color = Color(0.05, 0.04, 0.04, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_c22q4"]
+material = SubResource("StandardMaterial3D_h30gm")
+size = Vector2(1.06, 0.15)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j8sbk"]
+render_priority = 2
+no_depth_test = true
+shading_mode = 0
+albedo_color = Color(0.75, 0.12, 0.1, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_j7kiv"]
+material = SubResource("StandardMaterial3D_j8sbk")
+size = Vector2(1, 0.09)
+
+[node name="BarraVida" type="Node3D" unique_id=1630229395]
+script = ExtResource("1_0ro7s")
+
+[node name="Fondo" type="MeshInstance3D" parent="." unique_id=1570315642]
+mesh = SubResource("QuadMesh_c22q4")
+
+[node name="Relleno" type="MeshInstance3D" parent="." unique_id=292152078]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.005)
+mesh = SubResource("QuadMesh_j7kiv")

@@ -19,6 +19,23 @@ El juego arranca en **Villa Pitter**, un pueblo medieval oscuro.
 - Movimiento con **WASD/flechas en 8 direcciones**, relativo a los ejes del mundo (arriba = -Z).
 - **Cámara fija**: ángulo cenital sin rotación, solo zoom con la rueda del mouse.
 - **Sin salto y sin correr**: una sola velocidad de caminata.
+- **Controles**: Ctrl = golpe cuerpo a cuerpo; 1-4 = elegir hechizo (macros); clic izquierdo =
+  lanzar el hechizo elegido hacia el mouse; clic derecho = interactuar (tiendas, NPCs, etc.).
+- **Personaje principal: nigromante** (`assets/models/personajes/nigromante/nigromante.glb`).
+  Pipeline: imagen de referencia → TRELLIS (IA imagen a 3D, licencia MIT) → Mixamo (esqueleto y
+  animaciones) → `tools/blender/nigromante_mixamo_a_glb.py` (separa el bastón y lo ata a la mano,
+  deja "caminar" en el lugar, junta todo en un GLB con huesos sin el prefijo `mixamorig:`).
+  `ModelAnimator` elige idle/caminar por velocidad y reproduce golpe/hechizos; cada `SpellData`
+  dice qué animación usa y en qué segundo sale el proyectil. Más adelante el equipo (armas,
+  cascos) se engancha a huesos con `BoneAttachment3D`.
+- **No simplificar (decimate) modelos generados por IA después de exportarlos**: vienen cortados
+  en las costuras de textura y se agrietan. Si hace falta menos polígonos, pedirlo al extraer en TRELLIS.
+- **Esbirros**: por ahora 3 esqueletos permanentes que siguen al nigromante y atacan al último
+  objetivo que él golpeó o clickeó. Más adelante un hechizo invocará más o los cambiará (ej. lobos)
+  vía `Player.set_minions()`.
+- **Capas de física**: 1 mundo, 2 jugador, 3 esbirros, 4 enemigos. Lo atacable va en el grupo
+  `enemigos` y tiene un nodo hijo `Health`.
+- **Navegación**: el mapa hornea la navmesh al cargar a partir de los nodos del grupo `navegacion`.
 - **Terreno medianamente llano**: pendientes suaves (< 25–30°) que se suben caminando. Los cambios de
   altura van por rampas o escaleras (con una rampa de colisión invisible debajo de los escalones).
   Barrancos, rocas o agua funcionan como bordes naturales en lugar de paredes invisibles.
@@ -36,6 +53,8 @@ scenes/       Escenas .tscn
   characters/   Jugador, NPCs, enemigos
   props/        Objetos del mundo (casas, árboles, antorchas, cofres)
   ui/           HUD, menús, inventario, diálogos
+  effects/      Proyectiles y efectos
+data/         Datos de juego como Resources .tres (hechizos, items, clases...)
 scripts/      Scripts .gd (espejan la organización de scenes cuando aplica)
   player/       Movimiento, cámara, input, stats del jugador
   npc/          IA, diálogos, comerciantes, enemigos

@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/spell_projectile.gd" id="1_3egp3"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_nyrqn"]
+radius = 0.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_75wcu"]
+radius = 0.15
+height = 0.3
+radial_segments = 12
+rings = 6
+
+[node name="ProyectilHechizo" type="Area3D" unique_id=915024842]
+collision_layer = 0
+collision_mask = 9
+script = ExtResource("1_3egp3")
+
+[node name="Colision" type="CollisionShape3D" parent="." unique_id=630362277]
+shape = SubResource("SphereShape3D_nyrqn")
+
+[node name="Malla" type="MeshInstance3D" parent="." unique_id=370197492]
+mesh = SubResource("SphereMesh_75wcu")
+
+[node name="Luz" type="OmniLight3D" parent="." unique_id=694920987]
+light_color = Color(0.45, 1, 0.35, 1)
+light_energy = 2.0
+light_volumetric_fog_energy = 0.4
+omni_range = 3.5
+omni_attenuation = 1.6

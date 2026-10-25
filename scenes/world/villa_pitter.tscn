@@ -6,6 +6,9 @@
 [ext_resource type="PackedScene" path="res://assets/models/medieval_village/Prop_Crate.gltf" id="4_caja"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="5_player"]
 [ext_resource type="Script" path="res://scripts/player/camera_rig.gd" id="6_camrig"]
+[ext_resource type="Script" path="res://scripts/systems/nav_autobake.gd" id="7_nav"]
+[ext_resource type="PackedScene" path="res://scenes/characters/muneco_practica.tscn" id="8_muneco"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="9_hud"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_tierra"]
 albedo_color = Color(0.27, 0.23, 0.19, 1)
@@ -15,7 +18,8 @@ roughness = 1.0
 material = SubResource("Mat_tierra")
 size = Vector2(200, 200)
 
-[sub_resource type="WorldBoundaryShape3D" id="Shape_suelo"]
+[sub_resource type="BoxShape3D" id="Shape_suelo"]
+size = Vector3(200, 1, 200)
 
 [sub_resource type="BoxShape3D" id="Shape_cajas"]
 size = Vector3(2.4, 2.1, 1.6)
@@ -23,23 +27,32 @@ size = Vector3(2.4, 2.1, 1.6)
 [sub_resource type="BoxShape3D" id="Shape_carreta"]
 size = Vector3(2, 1.5, 4)
 
+[sub_resource type="NavigationMesh" id="NavMesh_pueblo"]
+geometry_parsed_geometry_type = 1
+geometry_source_geometry_mode = 1
+geometry_source_group_name = &"navegacion"
+agent_radius = 0.5
+agent_height = 1.5
+filter_baking_aabb = AABB(-40, -2, -40, 80, 14, 80)
+
 [node name="VillaPitter" type="Node3D"]
 
 [node name="VillaPitterAmbience" parent="." instance=ExtResource("1_amb")]
 
-[node name="Suelo" type="StaticBody3D" parent="."]
+[node name="Suelo" type="StaticBody3D" parent="." groups=["navegacion"]]
 
 [node name="Malla" type="MeshInstance3D" parent="Suelo"]
 mesh = SubResource("Mesh_suelo")
 
 [node name="Colision" type="CollisionShape3D" parent="Suelo"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 shape = SubResource("Shape_suelo")
 
-[node name="Edificios" type="Node3D" parent="."]
+[node name="Edificios" type="Node3D" parent="." groups=["navegacion"]]
 
 [node name="CasaComun" parent="Edificios" instance=ExtResource("2_casa")]
 
-[node name="Props" type="Node3D" parent="."]
+[node name="Props" type="Node3D" parent="." groups=["navegacion"]]
 
 [node name="Carreta" parent="Props" instance=ExtResource("3_carreta")]
 transform = Transform3D(0.866025, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866025, 6, 0, 8)
@@ -87,3 +100,21 @@ target = NodePath("../Player")
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
 fov = 50.0
 current = true
+
+[node name="Navegacion" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavMesh_pueblo")
+script = ExtResource("7_nav")
+
+[node name="Enemigos" type="Node3D" parent="."]
+
+[node name="Muneco1" parent="Enemigos" instance=ExtResource("8_muneco")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 0, 12)
+
+[node name="Muneco2" parent="Enemigos" instance=ExtResource("8_muneco")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0, 14.5)
+
+[node name="Muneco3" parent="Enemigos" instance=ExtResource("8_muneco")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 13)
+
+[node name="Hud" parent="." node_paths=PackedStringArray("player") instance=ExtResource("9_hud")]
+player = NodePath("../Player")
