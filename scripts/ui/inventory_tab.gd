@@ -28,7 +28,7 @@ func setup(p_player: Player) -> void:
 	equipment_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(equipment_row)
 	for kind: ItemData.Kind in Equipment.SLOTS:
-		var slot := ItemSlot.new(SLOT_SIZE + 4.0, EQUIPMENT_LABELS[kind])
+		var slot := ItemSlot.new(SLOT_SIZE + 4.0, EQUIPMENT_LABELS[kind], UiStyle.EQUIP_BORDER)
 		slot.double_clicked.connect(player.unequip.bind(kind))
 		equipment_row.add_child(slot)
 		_equipment_slots[kind] = slot

@@ -7,7 +7,7 @@ extends VBoxContainer
 var player: Player
 
 var _list: ItemList
-var _slot_styles: Array[StyleBoxFlat] = []
+var _slot_highlights: Array[Control] = []
 var _slot_panels: Array[Control] = []
 var _slot_names: Array[Label] = []
 var _cooldown_bars: Array[ProgressBar] = []
@@ -21,7 +21,7 @@ func setup(p_player: Player) -> void:
 	_list.focus_mode = Control.FOCUS_NONE
 	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_list.custom_minimum_size = Vector2(0, 60)
-	_list.add_theme_stylebox_override("panel", UiStyle.box(Color(0.03, 0.03, 0.035), Color(0.24, 0.18, 0.11), 1, 4.0))
+	_list.add_theme_stylebox_override("panel", UiStyle.line_box(4.0))
 	_list.add_theme_stylebox_override("selected", UiStyle.box(UiStyle.STONE_LIGHT, UiStyle.SELECTED, 1, 2.0))
 	_list.add_theme_stylebox_override("selected_focus", UiStyle.box(UiStyle.STONE_LIGHT, UiStyle.SELECTED, 1, 2.0))
 	_list.add_theme_font_size_override("font_size", 13)
@@ -61,11 +61,8 @@ func _process(_delta: float) -> void:
 
 
 func _make_slot(index: int) -> Control:
-	var style := UiStyle.box(UiStyle.STONE_LIGHT, UiStyle.WOOD_LIGHT, 2, 4.0)
-	_slot_styles.append(style)
-
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", UiStyle.line_box(4.0))
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.custom_minimum_size = Vector2(0, 34)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -95,6 +92,16 @@ func _make_slot(index: int) -> Control:
 	cooldown.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(cooldown)
 	_cooldown_bars.append(cooldown)
+
+	# Marco verde encima cuando es la macro elegida; se estira hasta el borde del casillero.
+	var highlight := Panel.new()
+	var glow := UiStyle.box(Color.TRANSPARENT, UiStyle.SELECTED, 2, 0.0)
+	glow.draw_center = false
+	glow.set_expand_margin_all(4.0)
+	highlight.add_theme_stylebox_override("panel", glow)
+	highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(highlight)
+	_slot_highlights.append(highlight)
 	return panel
 
 
@@ -122,8 +129,8 @@ func _refresh_macros() -> void:
 
 
 func _refresh_selection() -> void:
-	for i in _slot_styles.size():
-		_slot_styles[i].border_color = UiStyle.SELECTED if i == player.selected_macro else UiStyle.WOOD_LIGHT
+	for i in _slot_highlights.size():
+		_slot_highlights[i].visible = i == player.selected_macro
 
 
 func _refresh_mana() -> void:

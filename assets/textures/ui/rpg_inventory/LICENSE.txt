@@ -1,0 +1,8 @@
+RPG Inventory, por itsmars
+https://opengameart.org/content/rpg-inventory
+Licencia: CC0 (dominio público). No requiere atribución.
+
+Archivos renombrados:
+  itsmars_Inventory.png       -> panel_inventario.png
+  64x64 BagSlotBorder.png     -> borde_casillero.png
+  81x81 EquipSlotBorder.png   -> borde_equipo.png

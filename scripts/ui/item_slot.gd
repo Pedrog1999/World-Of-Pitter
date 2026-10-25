@@ -2,11 +2,12 @@ class_name ItemSlot
 extends Panel
 ## Casillero de item (inventario o equipo). Muestra el ícono del item, o un cuadro de
 ## su color con las iniciales si no tiene ícono, y la cantidad si es más de uno.
+## Fondo de piedra con el borde del pack de inventario encima.
 
 signal clicked
 signal double_clicked
 
-var _style: StyleBoxFlat
+var _highlight: Panel
 var _swatch: ColorRect
 var _icon: TextureRect
 var _initials: Label
@@ -15,11 +16,10 @@ var _placeholder: Label
 
 
 ## `placeholder`: texto tenue cuando está vacío (por ejemplo "Arma").
-func _init(slot_size: float, placeholder: String = "") -> void:
+func _init(slot_size: float, placeholder: String = "", border: Texture2D = UiStyle.SLOT_BORDER) -> void:
 	custom_minimum_size = Vector2(slot_size, slot_size)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_style = UiStyle.box(UiStyle.STONE_LIGHT, Color(0.24, 0.18, 0.11), 1, 0.0)
-	add_theme_stylebox_override("panel", _style)
+	add_theme_stylebox_override("panel", UiStyle.stone())
 
 	_placeholder = UiStyle.label(placeholder, 9, Color(UiStyle.TEXT_DIM, 0.6))
 	_placeholder.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -48,6 +48,25 @@ func _init(slot_size: float, placeholder: String = "") -> void:
 	_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_icon)
 
+	var frame := NinePatchRect.new()
+	frame.texture = border
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame.patch_margin_left = 4
+	frame.patch_margin_top = 4
+	frame.patch_margin_right = 4
+	frame.patch_margin_bottom = 4
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(frame)
+
+	_highlight = Panel.new()
+	var glow := UiStyle.box(Color.TRANSPARENT, UiStyle.SELECTED, 2, 0.0)
+	glow.draw_center = false
+	_highlight.add_theme_stylebox_override("panel", glow)
+	_highlight.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_highlight.visible = false
+	add_child(_highlight)
+
 	_amount = UiStyle.label("", 11)
 	_amount.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_amount.offset_right = -3
@@ -69,8 +88,7 @@ func set_item(item: ItemData, amount: int = 1) -> void:
 
 
 func set_selected(selected: bool) -> void:
-	_style.border_color = UiStyle.SELECTED if selected else Color(0.24, 0.18, 0.11)
-	_style.set_border_width_all(2 if selected else 1)
+	_highlight.visible = selected
 
 
 func _gui_input(event: InputEvent) -> void:

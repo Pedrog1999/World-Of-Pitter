@@ -8,7 +8,7 @@ extends CanvasLayer
 ## - Minimapa.
 ## Sobre la zona de juego quedan la ayuda de controles y el aviso de muerte.
 
-const PANEL_WIDTH := 300.0
+const PANEL_WIDTH := 316.0
 
 @export var player: Player
 
@@ -81,10 +81,7 @@ func _make_panel() -> Control:
 	panel.offset_left = -PANEL_WIDTH
 	# Frena los clics para que no lancen hechizos ni muevan el zoom.
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	var frame := UiStyle.box(UiStyle.WOOD, UiStyle.WOOD_LIGHT, 0, 8.0)
-	frame.border_width_left = 4
-	frame.set_corner_radius_all(0)
-	panel.add_theme_stylebox_override("panel", frame)
+	panel.add_theme_stylebox_override("panel", UiStyle.panel_frame())
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 6)
@@ -96,7 +93,7 @@ func _make_panel() -> Control:
 	column.add_child(_make_stats())
 
 	var minimap := Minimap.new()
-	minimap.custom_minimum_size = Vector2(0, 160)
+	minimap.custom_minimum_size = Vector2(0, 136)
 	var minimap_section := UiStyle.section(minimap)
 	minimap.setup(player)
 	column.add_child(minimap_section)
@@ -106,15 +103,19 @@ func _make_panel() -> Control:
 func _make_personal() -> Control:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 2)
-	_name_label = UiStyle.label("", 20, UiStyle.GOLD)
+	# Ficha de personaje sobre pergamino, escrita con tinta.
+	_name_label = UiStyle.ink_label("", 19)
 	column.add_child(_name_label)
-	_level_label = UiStyle.label("", 13, UiStyle.TEXT_DIM)
+	_level_label = UiStyle.ink_label("", 13, UiStyle.INK_DIM)
 	column.add_child(_level_label)
 	var parts := UiStyle.stat_bar(UiStyle.EXPERIENCE, 16)
 	_experience_bar = parts[0]
 	_experience_label = parts[1]
 	column.add_child(_experience_bar)
-	return UiStyle.section(column)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", UiStyle.parchment(10.0))
+	card.add_child(column)
+	return card
 
 
 func _make_tabs() -> Control:
@@ -149,12 +150,19 @@ func _make_tabs() -> Control:
 		button.add_theme_font_size_override("font_size", 14)
 		button.add_theme_color_override("font_color", UiStyle.TEXT_DIM)
 		button.add_theme_color_override("font_hover_color", UiStyle.TEXT)
+		# Recuadros de piedra: la pestaña elegida se ve más clara y con texto dorado.
 		button.add_theme_color_override("font_pressed_color", UiStyle.GOLD)
 		button.add_theme_color_override("font_hover_pressed_color", UiStyle.GOLD)
-		button.add_theme_stylebox_override("normal", UiStyle.box(UiStyle.WOOD, UiStyle.WOOD_LIGHT, 1, 4.0))
-		button.add_theme_stylebox_override("hover", UiStyle.box(UiStyle.STONE_LIGHT, UiStyle.WOOD_LIGHT, 1, 4.0))
-		button.add_theme_stylebox_override("pressed", UiStyle.box(UiStyle.STONE, UiStyle.WOOD_HIGHLIGHT, 2, 4.0))
-		button.add_theme_stylebox_override("hover_pressed", UiStyle.box(UiStyle.STONE, UiStyle.WOOD_HIGHLIGHT, 2, 4.0))
+		var normal := UiStyle.line_box(5.0)
+		normal.modulate_color = Color(0.6, 0.6, 0.6)
+		button.add_theme_stylebox_override("normal", normal)
+		var hover := UiStyle.line_box(5.0)
+		hover.modulate_color = Color(0.85, 0.85, 0.85)
+		button.add_theme_stylebox_override("hover", hover)
+		var pressed := UiStyle.line_box(5.0)
+		pressed.modulate_color = Color(1.5, 1.4, 1.2)
+		button.add_theme_stylebox_override("pressed", pressed)
+		button.add_theme_stylebox_override("hover_pressed", pressed)
 		var index := _tab_buttons.size()
 		button.toggled.connect(func(on: bool) -> void:
 			if on:
