@@ -1,11 +1,12 @@
-[gd_resource type="Resource" script_class="SpellData" format=3]
+[gd_resource type="Resource" script_class="SpellData" format=3 uid="uid://nl8wthri62br"]
 
-[ext_resource type="Script" path="res://scripts/systems/spell_data.gd" id="1_spell"]
+[ext_resource type="Script" uid="uid://rncm4lee7j3n" path="res://scripts/systems/spell_data.gd" id="1_spell"]
 
 [resource]
 script = ExtResource("1_spell")
 display_name = "Calavera Sombría"
 damage = 14
+mana_cost = 18
 cooldown = 2.0
 speed = 11.0
 max_range = 14.0

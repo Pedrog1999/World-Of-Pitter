@@ -6,9 +6,15 @@ extends CharacterBody3D
 ## - Ctrl: golpe cuerpo a cuerpo hacia donde mira.
 ## - 1-4: elegir hechizo (macros). Clic izquierdo: lanzarlo hacia el mouse.
 ## - Los esbirros (esqueletos) lo siguen y atacan al último objetivo que marcó.
+## - Los hechizos gastan maná. Vida y maná se regeneran solos. Al morir reaparece
+##   en la plaza (`respawn_point`, o donde arrancó si no hay uno asignado).
 
 signal target_changed(target: Node3D)
 signal spell_selected(index: int)
+## El hechizo no se lanzó porque falta maná.
+signal not_enough_mana(spell: SpellData)
+signal died
+signal respawned
 
 const ENEMY_LAYER := 1 << 3
 const CAST_HEIGHT := 1.2
@@ -27,6 +33,11 @@ const CAST_HEIGHT := 1.2
 @export var spells: Array[SpellData] = []
 @export var projectile_scene: PackedScene
 
+@export_group("Muerte")
+## Lugar donde reaparece al morir (un Marker3D en la plaza).
+@export var respawn_point: Node3D
+@export var respawn_time: float = 5.0
+
 @export_group("Esbirros")
 @export var minion_scene: PackedScene
 @export var minion_count: int = 3
@@ -35,19 +46,24 @@ const CAST_HEIGHT := 1.2
 var current_target: Node3D
 var selected_spell: int = 0
 var minions: Array[Node3D] = []
+var is_dead: bool = false
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _melee_timer: float = 0.0
 var _spell_timers: Array[float] = []
 ## Mientras es > 0 el personaje está golpeando o lanzando y no puede moverse.
 var _action_lock: float = 0.0
+var _spawn_transform: Transform3D
 
 @onready var visual: Node3D = $Visual
 @onready var animator: ModelAnimator = $Visual
 @onready var health: Health = $Health
+@onready var mana: Mana = $Mana
 
 
 func _ready() -> void:
+	_spawn_transform = global_transform
+	health.died.connect(_on_died)
 	_spell_timers.resize(spells.size())
 	_spell_timers.fill(0.0)
 	_spawn_minions.call_deferred()
@@ -61,7 +77,7 @@ func _physics_process(delta: float) -> void:
 
 	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var direction := Vector3(input.x, 0.0, input.y)
-	if _action_lock > 0.0:
+	if is_dead or _action_lock > 0.0:
 		direction = Vector3.ZERO
 	elif direction.length_squared() > 0.01 and animator.is_busy():
 		animator.cancel_action()
@@ -84,7 +100,12 @@ func _physics_process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("melee"):
+	if is_dead:
+		return
+	# Solo para probar la muerte mientras no haya monstruos que peguen.
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.echo 			and event.keycode == KEY_F9:
+		health.take_damage(25, null)
+	elif event.is_action_pressed("melee"):
 		_melee()
 	elif event.is_action_pressed("cast_spell"):
 		_cast_selected_spell()
@@ -156,13 +177,43 @@ func _spawn_minions() -> void:
 		minions.append(minion)
 
 
+func _on_died() -> void:
+	is_dead = true
+	_action_lock = 0.0
+	velocity = Vector3.ZERO
+	set_target(null)
+	animator.play_death()
+	died.emit()
+	await get_tree().create_timer(respawn_time, false, true).timeout
+	_respawn()
+
+
+func _respawn() -> void:
+	var spawn := respawn_point.global_transform if respawn_point else _spawn_transform
+	global_position = spawn.origin
+	velocity = Vector3.ZERO
+	reset_physics_interpolation()
+	for i in minions.size():
+		var minion := minions[i]
+		if is_instance_valid(minion):
+			minion.global_position = global_position + formation_offset(i)
+			minion.reset_physics_interpolation()
+	animator.revive()
+	health.reset()
+	mana.refill()
+	is_dead = false
+	respawned.emit()
+
+
 func _melee() -> void:
-	if _melee_timer > 0.0 or _action_lock > 0.0:
+	if is_dead or _melee_timer > 0.0 or _action_lock > 0.0:
 		return
 	_melee_timer = melee_cooldown
 	var impact_delay := animator.play_melee()
 	_action_lock = impact_delay + 0.1
 	await get_tree().create_timer(impact_delay, false, true).timeout
+	if is_dead:
+		return
 
 	var forward := visual.global_basis.z
 	var best: Node3D
@@ -188,7 +239,7 @@ func _melee() -> void:
 
 
 func _cast_selected_spell() -> void:
-	if spells.is_empty() or projectile_scene == null:
+	if is_dead or spells.is_empty() or projectile_scene == null:
 		return
 	if _spell_timers[selected_spell] > 0.0 or _action_lock > 0.0:
 		return
@@ -201,6 +252,10 @@ func _cast_selected_spell() -> void:
 	direction.y = 0.0
 	if direction.length_squared() < 0.01:
 		return
+	# Como en AO, el maná se gasta al empezar a lanzar.
+	if not mana.spend(spell.mana_cost):
+		not_enough_mana.emit(spell)
+		return
 	direction = direction.normalized()
 	visual.rotation.y = atan2(direction.x, direction.z)
 
@@ -210,6 +265,8 @@ func _cast_selected_spell() -> void:
 	if aim.target:
 		set_target(aim.target)
 	await get_tree().create_timer(release_delay, false, true).timeout
+	if is_dead:
+		return
 
 	var projectile: SpellProjectile = projectile_scene.instantiate()
 	projectile.setup(spell, self, direction)

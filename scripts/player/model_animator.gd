@@ -2,7 +2,8 @@ class_name ModelAnimator
 extends Node3D
 ## Anima un modelo con esqueleto (animaciones de Mixamo): idle o caminar según la
 ## velocidad, y golpe/hechizo como acciones que se reproducen completas salvo que el
-## personaje empiece a moverse.
+## personaje empiece a moverse. Al morir usa `death_animation` si el modelo la tiene;
+## si no, el personaje cae de espaldas.
 
 @export var animation_player: AnimationPlayer
 @export var idle_animation: StringName = &"idle"
@@ -15,9 +16,12 @@ extends Node3D
 @export var walk_natural_speed: float = 1.15
 @export var max_walk_speed_scale: float = 2.6
 @export var blend_time: float = 0.15
+@export var death_animation: StringName = &"muerte"
 
 var _speed: float = 0.0
 var _action_left: float = 0.0
+var _dead: bool = false
+var _death_tween: Tween
 
 
 func _ready() -> void:
@@ -53,7 +57,37 @@ func play_cast(spell: SpellData) -> float:
 	return spell.release_time / spell.animation_speed
 
 
+func play_death() -> void:
+	_dead = true
+	_action_left = 0.0
+	if animation_player.has_animation(death_animation):
+		animation_player.speed_scale = 1.0
+		animation_player.play(death_animation, blend_time)
+		return
+	animation_player.pause()
+	_kill_death_tween()
+	_death_tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_death_tween.tween_property(self, "rotation:x", -PI * 0.5, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+
+## Vuelve a dejar al personaje de pie (al reaparecer).
+func revive() -> void:
+	_dead = false
+	_kill_death_tween()
+	rotation.x = 0.0
+	animation_player.speed_scale = 1.0
+	animation_player.play(idle_animation)
+
+
+func _kill_death_tween() -> void:
+	if _death_tween:
+		_death_tween.kill()
+		_death_tween = null
+
+
 func _physics_process(delta: float) -> void:
+	if _dead:
+		return
 	if _action_left > 0.0:
 		_action_left -= delta
 		return

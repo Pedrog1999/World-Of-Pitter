@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/systems/health.gd" id="7_health"]
 [ext_resource type="Script" path="res://scripts/player/model_animator.gd" id="8_animator"]
 [ext_resource type="PackedScene" path="res://assets/models/personajes/nigromante/nigromante.glb" id="9_modelo"]
+[ext_resource type="Script" path="res://scripts/systems/mana.gd" id="10_mana"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_cuerpo"]
 radius = 0.35
@@ -30,6 +31,13 @@ shape = SubResource("Shape_cuerpo")
 [node name="Health" type="Node" parent="."]
 script = ExtResource("7_health")
 max_health = 100
+regen_per_second = 2.0
+regen_delay = 4.0
+
+[node name="Mana" type="Node" parent="."]
+script = ExtResource("10_mana")
+max_mana = 100
+regen_per_second = 5.0
 
 [node name="Visual" type="Node3D" parent="." node_paths=PackedStringArray("animation_player")]
 script = ExtResource("8_animator")

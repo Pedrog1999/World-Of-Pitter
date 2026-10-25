@@ -4,6 +4,7 @@ extends Resource
 
 @export var display_name: String = "Hechizo"
 @export var damage: int = 5
+@export var mana_cost: int = 5
 @export var cooldown: float = 0.6
 @export var speed: float = 16.0
 @export var max_range: float = 18.0
