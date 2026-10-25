@@ -4,13 +4,17 @@ extends CharacterBody3D
 ## - Movimiento con WASD/flechas en 8 direcciones. La cámara es fija, así que se usan
 ##   los ejes del mundo: arriba = -Z, derecha = +X.
 ## - Ctrl: golpe cuerpo a cuerpo hacia donde mira.
-## - 1-4: elegir hechizo (macros). Clic izquierdo: lanzarlo hacia el mouse.
+## - 1-9: elegir macro de hechizo. Clic izquierdo: lanzarlo hacia el mouse. Los hechizos
+##   conocidos se asignan a las macros desde el panel de Hechizos.
 ## - Los esbirros (esqueletos) lo siguen y atacan al último objetivo que marcó.
 ## - Los hechizos gastan maná. Vida y maná se regeneran solos. Al morir reaparece
 ##   en la plaza (`respawn_point`, o donde arrancó si no hay uno asignado).
+## - Gana experiencia al matar; cada nivel sube la vida y el maná máximos.
 
 signal target_changed(target: Node3D)
-signal spell_selected(index: int)
+signal macro_selected(index: int)
+signal macros_changed
+signal gold_changed(gold: int)
 ## El hechizo no se lanzó porque falta maná.
 signal not_enough_mana(spell: SpellData)
 signal died
@@ -18,7 +22,10 @@ signal respawned
 
 const ENEMY_LAYER := 1 << 3
 const CAST_HEIGHT := 1.2
+const MACRO_COUNT := 9
 
+@export var character_name: String = "Pitter"
+@export var class_title: String = "Nigromante"
 @export var move_speed: float = 4.5
 @export var acceleration: float = 40.0
 @export var turn_speed: float = 14.0
@@ -30,8 +37,13 @@ const CAST_HEIGHT := 1.2
 @export var melee_cooldown: float = 0.7
 
 @export_group("Hechizos")
-@export var spells: Array[SpellData] = []
+## Hechizos que el personaje sabe. Al empezar se asignan en orden a las macros.
+@export var known_spells: Array[SpellData] = []
 @export var projectile_scene: PackedScene
+
+@export_group("Progresión")
+@export var health_per_level: int = 10
+@export var mana_per_level: int = 12
 
 @export_group("Muerte")
 ## Lugar donde reaparece al morir (un Marker3D en la plaza).
@@ -44,13 +56,17 @@ const CAST_HEIGHT := 1.2
 @export var formation_radius: float = 1.7
 
 var current_target: Node3D
-var selected_spell: int = 0
+var selected_macro: int = 0
+## Hechizo de cada macro (1-9); null = macro vacía.
+var macros: Array[SpellData] = []
+var gold: int = 0
 var minions: Array[Node3D] = []
 var is_dead: bool = false
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _melee_timer: float = 0.0
-var _spell_timers: Array[float] = []
+## Segundos de recarga restantes por hechizo.
+var _cooldowns: Dictionary[SpellData, float] = {}
 ## Mientras es > 0 el personaje está golpeando o lanzando y no puede moverse.
 var _action_lock: float = 0.0
 var _spawn_transform: Transform3D
@@ -59,20 +75,23 @@ var _spawn_transform: Transform3D
 @onready var animator: ModelAnimator = $Visual
 @onready var health: Health = $Health
 @onready var mana: Mana = $Mana
+@onready var progression: Progression = $Progression
 
 
 func _ready() -> void:
 	_spawn_transform = global_transform
 	health.died.connect(_on_died)
-	_spell_timers.resize(spells.size())
-	_spell_timers.fill(0.0)
+	progression.leveled_up.connect(_on_leveled_up)
+	macros.resize(MACRO_COUNT)
+	for i in mini(known_spells.size(), MACRO_COUNT):
+		macros[i] = known_spells[i]
 	_spawn_minions.call_deferred()
 
 
 func _physics_process(delta: float) -> void:
 	_melee_timer = maxf(_melee_timer - delta, 0.0)
-	for i in _spell_timers.size():
-		_spell_timers[i] = maxf(_spell_timers[i] - delta, 0.0)
+	for spell: SpellData in _cooldowns:
+		_cooldowns[spell] = maxf(_cooldowns[spell] - delta, 0.0)
 	_action_lock = maxf(_action_lock - delta, 0.0)
 
 	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -110,22 +129,43 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("cast_spell"):
 		_cast_selected_spell()
 	else:
-		for i in spells.size():
+		for i in MACRO_COUNT:
 			if event.is_action_pressed("spell_%d" % (i + 1)):
-				select_spell(i)
+				select_macro(i)
 
 
-func select_spell(index: int) -> void:
-	if index < 0 or index >= spells.size():
+func select_macro(index: int) -> void:
+	if index < 0 or index >= MACRO_COUNT:
 		return
-	selected_spell = index
-	spell_selected.emit(index)
+	selected_macro = index
+	macro_selected.emit(index)
+
+
+## Asigna un hechizo conocido a una macro (null la vacía).
+func set_macro(index: int, spell: SpellData) -> void:
+	if index < 0 or index >= MACRO_COUNT:
+		return
+	if spell and not known_spells.has(spell):
+		return
+	macros[index] = spell
+	macros_changed.emit()
 
 
 ## 0 = listo para lanzar, 1 = recién lanzado.
-func spell_cooldown_ratio(index: int) -> float:
-	var cooldown := spells[index].cooldown
-	return _spell_timers[index] / cooldown if cooldown > 0.0 else 0.0
+func spell_cooldown_ratio(spell: SpellData) -> float:
+	if spell == null or spell.cooldown <= 0.0:
+		return 0.0
+	return _cooldowns.get(spell, 0.0) / spell.cooldown
+
+
+func gain_experience(amount: int) -> void:
+	progression.add_experience(amount)
+	DamageNumber.spawn_text(get_parent(), global_position + Vector3.UP * 2.3, "+%d exp" % amount, Color(0.62, 0.85, 0.4))
+
+
+func add_gold(amount: int) -> void:
+	gold = maxi(gold + amount, 0)
+	gold_changed.emit(gold)
 
 
 func set_target(target: Node3D) -> void:
@@ -175,6 +215,14 @@ func _spawn_minions() -> void:
 		get_parent().add_child(minion)
 		minion.global_position = global_position + formation_offset(i)
 		minions.append(minion)
+
+
+func _on_leveled_up(level: int) -> void:
+	DamageNumber.spawn_text(get_parent(), global_position + Vector3.UP * 2.8, "¡Nivel %d!" % level, UiStyle.GOLD)
+	health.max_health += health_per_level
+	mana.max_mana += mana_per_level
+	health.reset()
+	mana.refill()
 
 
 func _on_died() -> void:
@@ -239,15 +287,15 @@ func _melee() -> void:
 
 
 func _cast_selected_spell() -> void:
-	if is_dead or spells.is_empty() or projectile_scene == null:
+	var spell := macros[selected_macro]
+	if is_dead or spell == null or projectile_scene == null:
 		return
-	if _spell_timers[selected_spell] > 0.0 or _action_lock > 0.0:
+	if _cooldowns.get(spell, 0.0) > 0.0 or _action_lock > 0.0:
 		return
 	var aim := _mouse_aim()
 	if aim.is_empty():
 		return
 
-	var spell := spells[selected_spell]
 	var direction: Vector3 = aim.point - global_position
 	direction.y = 0.0
 	if direction.length_squared() < 0.01:
@@ -259,7 +307,7 @@ func _cast_selected_spell() -> void:
 	direction = direction.normalized()
 	visual.rotation.y = atan2(direction.x, direction.z)
 
-	_spell_timers[selected_spell] = spell.cooldown
+	_cooldowns[spell] = spell.cooldown
 	var release_delay := animator.play_cast(spell)
 	_action_lock = release_delay + 0.1
 	if aim.target:

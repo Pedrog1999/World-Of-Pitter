@@ -4,6 +4,7 @@ extends StaticBody3D
 ## se rompe al llegar a 0 y se vuelve a armar después de un rato.
 
 @export var respawn_time: float = 5.0
+@export var experience_reward: int = 30
 
 @onready var health: Health = $Health
 @onready var visual: Node3D = $Visual
@@ -36,6 +37,7 @@ func _on_damaged(amount: int, source: Node) -> void:
 
 
 func _on_died() -> void:
+	_reward_killer()
 	$Colision.set_deferred("disabled", true)
 	if _wobble:
 		_wobble.kill()
@@ -48,3 +50,12 @@ func _on_died() -> void:
 	$Colision.set_deferred("disabled", false)
 	var back := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	back.tween_property(visual, "scale", Vector3.ONE, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Da la experiencia a quien lo mató (si fue un esbirro, a su amo).
+func _reward_killer() -> void:
+	var killer := health.last_source
+	if killer and "master" in killer and killer.master:
+		killer = killer.master
+	if is_instance_valid(killer) and killer.has_method("gain_experience"):
+		killer.gain_experience(experience_reward)

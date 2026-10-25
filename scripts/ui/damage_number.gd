@@ -1,11 +1,15 @@
 class_name DamageNumber
 extends Label3D
-## Número de daño flotante que sube y se desvanece.
+## Número de daño (o texto corto) flotante que sube y se desvanece.
 
 
 static func spawn(parent: Node, pos: Vector3, amount: int, color: Color = Color(1.0, 0.88, 0.55)) -> void:
+	spawn_text(parent, pos, str(amount), color)
+
+
+static func spawn_text(parent: Node, pos: Vector3, text: String, color: Color) -> void:
 	var label := DamageNumber.new()
-	label.text = str(amount)
+	label.text = text
 	label.modulate = color
 	label.outline_modulate = Color(0.05, 0.03, 0.02)
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

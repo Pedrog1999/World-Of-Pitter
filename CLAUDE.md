@@ -49,12 +49,14 @@ El juego arranca en **Villa Pitter**, un pueblo medieval oscuro.
 
 Hacer en este orden; cada paso jugable, con commit + push al terminar:
 
-1. **Vida y maná del jugador**: los hechizos gastan maná (agregar `mana_cost` a `SpellData`),
+1. ✅ **Vida y maná del jugador**: los hechizos gastan maná (agregar `mana_cost` a `SpellData`),
    regeneración, muerte y reaparición en la plaza.
-2. **Interfaz estilo AO con paneles fijos a la derecha** de la pantalla (el juego ocupa el resto):
-   - Arriba: pestañas **Inventario / Hechizos**. En Hechizos, la lista de hechizos conocidos que se
+2. ✅ **Interfaz estilo AO con paneles fijos a la derecha** de la pantalla (el juego ocupa el resto;
+   la cámara se corre con `set_right_margin` para centrar al personaje en la zona visible):
+   - Arriba de todo: **datos personales** (nombre, clase, nivel y experiencia).
+   - Debajo: pestañas **Inventario / Hechizos**. En Hechizos, la lista de hechizos conocidos que se
      asignan a las macros 1-9.
-   - Medio: **stats** (vida, maná, nivel, experiencia, oro).
+   - Medio: **stats** (vida, maná, oro).
    - Abajo: **minimapa**.
    - Mantener la estética oscura medieval (marcos de madera/piedra, texto claro). La barra de
      hechizos actual (`scripts/ui/hud.gd`) se integra a este panel.

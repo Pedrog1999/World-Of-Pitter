@@ -1,25 +1,29 @@
 class_name Hud
 extends CanvasLayer
-## HUD mínimo: barras de vida y maná, barra de hechizos (macros) con tiempo de recarga,
-## aviso de muerte y ayuda de controles. Se reemplaza por los paneles fijos en el paso 2.
+## Interfaz estilo Argentum Online: un panel fijo a la derecha y el juego en el resto.
+## Panel, de arriba a abajo:
+## - Datos personales: nombre, clase, nivel y experiencia.
+## - Pestañas Inventario / Hechizos (hechizos conocidos y macros 1-9).
+## - Estado: vida, maná y oro.
+## - Minimapa.
+## Sobre la zona de juego quedan la ayuda de controles y el aviso de muerte.
 
-const SLOT_BG := Color(0.05, 0.06, 0.07, 0.78)
-const SLOT_BORDER := Color(0.3, 0.3, 0.32)
-const SLOT_SELECTED := Color(0.45, 1.0, 0.35)
-const HEALTH_COLOR := Color(0.62, 0.12, 0.1)
-const MANA_COLOR := Color(0.18, 0.32, 0.72)
-const TEXT_COLOR := Color(0.85, 0.83, 0.78)
+const PANEL_WIDTH := 300.0
 
 @export var player: Player
 
-var _slot_styles: Array[StyleBoxFlat] = []
-var _cooldown_bars: Array[ProgressBar] = []
-var _slot_panels: Array[Control] = []
+var _name_label: Label
+var _level_label: Label
+var _experience_bar: ProgressBar
+var _experience_label: Label
 var _health_bar: ProgressBar
 var _health_label: Label
 var _mana_bar: ProgressBar
 var _mana_label: Label
+var _gold_label: Label
 var _mana_flash: Tween
+var _tab_buttons: Array[Button] = []
+var _tab_pages: Array[Control] = []
 var _death_overlay: ColorRect
 var _death_label: Label
 var _respawn_left: float = 0.0
@@ -31,115 +35,190 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
-	var bottom := VBoxContainer.new()
-	bottom.add_theme_constant_override("separation", 8)
-	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(bottom)
+	var game_area := Control.new()
+	game_area.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_area.offset_right = -PANEL_WIDTH
+	game_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(game_area)
+	_make_help(game_area)
+	_make_death_overlay(game_area)
 
-	var stats := HBoxContainer.new()
-	stats.add_theme_constant_override("separation", 8)
-	stats.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bottom.add_child(stats)
-	var health_parts := _make_stat_bar(HEALTH_COLOR)
-	_health_bar = health_parts[0]
-	_health_label = health_parts[1]
-	stats.add_child(_health_bar)
-	var mana_parts := _make_stat_bar(MANA_COLOR)
-	_mana_bar = mana_parts[0]
-	_mana_label = mana_parts[1]
-	stats.add_child(_mana_bar)
+	root.add_child(_make_panel())
 
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", 8)
-	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bottom.add_child(bar)
-	for i in player.spells.size():
-		bar.add_child(_make_slot(i, player.spells[i]))
-	bottom.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE, 16)
-
-	_make_death_overlay(root)
-
-	var help := Label.new()
-	help.text = "WASD mover  ·  Ctrl golpe  ·  1-%d elegir hechizo  ·  Clic izq. lanzar  ·  Rueda zoom" % player.spells.size()
-	if OS.is_debug_build():
-		help.text += "  ·  F9 recibir daño (prueba)"
-	help.add_theme_color_override("font_color", Color(0.75, 0.75, 0.72, 0.8))
-	help.add_theme_font_size_override("font_size", 14)
-	help.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(help)
-	help.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, 12)
-
-	player.spell_selected.connect(_on_spell_selected)
-	_on_spell_selected(player.selected_spell)
+	player.progression.experience_changed.connect(_refresh_personal.unbind(2))
+	player.progression.leveled_up.connect(_refresh_personal.unbind(1))
 	player.health.damaged.connect(_refresh_health.unbind(2))
 	player.health.healed.connect(_refresh_health.unbind(1))
 	player.health.died.connect(_refresh_health)
 	player.mana.changed.connect(_refresh_mana.unbind(2))
 	player.not_enough_mana.connect(_on_not_enough_mana.unbind(1))
+	player.gold_changed.connect(_refresh_gold.unbind(1))
 	player.died.connect(_on_player_died)
 	player.respawned.connect(_on_player_respawned)
+	_refresh_personal()
 	_refresh_health()
 	_refresh_mana()
+	_refresh_gold()
+
+	get_tree().call_group.call_deferred("camara_juego", "set_right_margin", PANEL_WIDTH)
 
 
 func _process(delta: float) -> void:
-	for i in _cooldown_bars.size():
-		_cooldown_bars[i].value = player.spell_cooldown_ratio(i)
 	if _death_overlay.visible:
 		_respawn_left = maxf(_respawn_left - delta, 0.0)
-		_death_label.text = "Has muerto.
-Reaparecerás en la plaza en %d…" % ceili(_respawn_left)
+		_death_label.text = "Has muerto.\nReaparecerás en la plaza en %d…" % ceili(_respawn_left)
 
 
-## Devuelve [barra, etiqueta]; la etiqueta va centrada sobre la barra.
-func _make_stat_bar(color: Color) -> Array:
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = color
-	fill.set_corner_radius_all(3)
-	var background := StyleBoxFlat.new()
-	background.bg_color = SLOT_BG
-	background.set_border_width_all(2)
-	background.border_color = SLOT_BORDER
-	background.set_corner_radius_all(4)
+func _make_panel() -> Control:
+	var panel := PanelContainer.new()
+	panel.anchor_left = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = -PANEL_WIDTH
+	# Frena los clics para que no lancen hechizos ni muevan el zoom.
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var frame := UiStyle.box(UiStyle.WOOD, UiStyle.WOOD_LIGHT, 0, 8.0)
+	frame.border_width_left = 4
+	frame.set_corner_radius_all(0)
+	panel.add_theme_stylebox_override("panel", frame)
 
-	var bar := ProgressBar.new()
-	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(150, 22)
-	bar.add_theme_stylebox_override("fill", fill)
-	bar.add_theme_stylebox_override("background", background)
-	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
+	panel.add_child(column)
+	column.add_child(_make_personal())
+	var tabs := _make_tabs()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(tabs)
+	column.add_child(_make_stats())
 
-	var label := Label.new()
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", TEXT_COLOR)
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	label.add_theme_constant_override("outline_size", 4)
-	label.add_theme_font_size_override("font_size", 14)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.add_child(label)
-	return [bar, label]
+	var minimap := Minimap.new()
+	minimap.custom_minimum_size = Vector2(0, 160)
+	var minimap_section := UiStyle.section(minimap)
+	minimap.setup(player)
+	column.add_child(minimap_section)
+	return panel
 
 
-func _make_death_overlay(root: Control) -> void:
+func _make_personal() -> Control:
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 2)
+	_name_label = UiStyle.label("", 20, UiStyle.GOLD)
+	column.add_child(_name_label)
+	_level_label = UiStyle.label("", 13, UiStyle.TEXT_DIM)
+	column.add_child(_level_label)
+	var parts := UiStyle.stat_bar(UiStyle.EXPERIENCE, 16)
+	_experience_bar = parts[0]
+	_experience_label = parts[1]
+	column.add_child(_experience_bar)
+	return UiStyle.section(column)
+
+
+func _make_tabs() -> Control:
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 0)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 2)
+	column.add_child(header)
+
+	# Las páginas se apilan en el mismo marco; solo se ve la de la pestaña elegida.
+	var pages := UiStyle.section()
+	pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(pages)
+
+	var inventory := InventoryTab.new()
+	inventory.setup(player)
+	var spells := SpellsTab.new()
+	spells.setup(player)
+	for page: Control in [inventory, spells]:
+		pages.add_child(page)
+		_tab_pages.append(page)
+
+	var group := ButtonGroup.new()
+	for title in ["Inventario", "Hechizos"]:
+		var button := Button.new()
+		button.text = title
+		button.toggle_mode = true
+		button.button_group = group
+		button.focus_mode = Control.FOCUS_NONE
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 14)
+		button.add_theme_color_override("font_color", UiStyle.TEXT_DIM)
+		button.add_theme_color_override("font_hover_color", UiStyle.TEXT)
+		button.add_theme_color_override("font_pressed_color", UiStyle.GOLD)
+		button.add_theme_color_override("font_hover_pressed_color", UiStyle.GOLD)
+		button.add_theme_stylebox_override("normal", UiStyle.box(UiStyle.WOOD, UiStyle.WOOD_LIGHT, 1, 4.0))
+		button.add_theme_stylebox_override("hover", UiStyle.box(UiStyle.STONE_LIGHT, UiStyle.WOOD_LIGHT, 1, 4.0))
+		button.add_theme_stylebox_override("pressed", UiStyle.box(UiStyle.STONE, UiStyle.WOOD_HIGHLIGHT, 2, 4.0))
+		button.add_theme_stylebox_override("hover_pressed", UiStyle.box(UiStyle.STONE, UiStyle.WOOD_HIGHLIGHT, 2, 4.0))
+		var index := _tab_buttons.size()
+		button.toggled.connect(func(on: bool) -> void:
+			if on:
+				_show_tab(index))
+		header.add_child(button)
+		_tab_buttons.append(button)
+	_tab_buttons[0].button_pressed = true
+	_show_tab(0)
+	return column
+
+
+func _show_tab(index: int) -> void:
+	for i in _tab_pages.size():
+		_tab_pages[i].visible = i == index
+
+
+func _make_stats() -> Control:
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 4)
+	var health_parts := UiStyle.stat_bar(UiStyle.HEALTH)
+	_health_bar = health_parts[0]
+	_health_label = health_parts[1]
+	column.add_child(_health_bar)
+	var mana_parts := UiStyle.stat_bar(UiStyle.MANA)
+	_mana_bar = mana_parts[0]
+	_mana_label = mana_parts[1]
+	column.add_child(_mana_bar)
+	_gold_label = UiStyle.label("", 14, UiStyle.GOLD)
+	column.add_child(_gold_label)
+	return UiStyle.section(column)
+
+
+func _make_help(game_area: Control) -> void:
+	var help := UiStyle.label("WASD mover  ·  Ctrl golpe  ·  1-9 macro  ·  Clic izq. lanzar  ·  Rueda zoom", 13, Color(0.75, 0.75, 0.72, 0.8))
+	if OS.is_debug_build():
+		help.text += "  ·  F9 recibir daño (prueba)"
+	game_area.add_child(help)
+	help.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, 12)
+
+
+func _make_death_overlay(game_area: Control) -> void:
 	_death_overlay = ColorRect.new()
 	_death_overlay.color = Color(0.05, 0.0, 0.0, 0.55)
 	_death_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_death_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_death_overlay.visible = false
-	root.add_child(_death_overlay)
+	game_area.add_child(_death_overlay)
 
-	_death_label = Label.new()
+	_death_label = UiStyle.label("", 32, Color(0.85, 0.3, 0.25))
+	_death_label.add_theme_constant_override("outline_size", 6)
 	_death_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_death_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_death_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_death_label.add_theme_color_override("font_color", Color(0.85, 0.3, 0.25))
-	_death_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	_death_label.add_theme_constant_override("outline_size", 6)
-	_death_label.add_theme_font_size_override("font_size", 32)
-	_death_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_death_overlay.add_child(_death_label)
+
+
+func _refresh_personal() -> void:
+	var progression := player.progression
+	_name_label.text = player.character_name
+	_level_label.text = "%s  ·  Nivel %d" % [player.class_title, progression.level]
+	if progression.is_max_level():
+		_experience_bar.max_value = 1.0
+		_experience_bar.value = 1.0
+		_experience_label.text = "Nivel máximo"
+	else:
+		_experience_bar.max_value = progression.experience_to_next()
+		_experience_bar.value = progression.experience
+		_experience_label.text = "Exp %d / %d" % [progression.experience, progression.experience_to_next()]
 
 
 func _refresh_health() -> void:
@@ -154,8 +233,10 @@ func _refresh_mana() -> void:
 	_mana_bar.max_value = mana.max_mana
 	_mana_bar.value = mana.current
 	_mana_label.text = "Maná %d / %d" % [mana.current, mana.max_mana]
-	for i in _slot_panels.size():
-		_slot_panels[i].modulate.a = 1.0 if mana.has(player.spells[i].mana_cost) else 0.45
+
+
+func _refresh_gold() -> void:
+	_gold_label.text = "Oro: %d" % player.gold
 
 
 func _on_not_enough_mana() -> void:
@@ -173,43 +254,3 @@ func _on_player_died() -> void:
 
 func _on_player_respawned() -> void:
 	_death_overlay.visible = false
-
-
-func _make_slot(index: int, spell: SpellData) -> Control:
-	var style := StyleBoxFlat.new()
-	style.bg_color = SLOT_BG
-	style.set_border_width_all(2)
-	style.border_color = SLOT_BORDER
-	style.set_corner_radius_all(4)
-	style.set_content_margin_all(8)
-	_slot_styles.append(style)
-
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", style)
-	panel.custom_minimum_size = Vector2(150, 0)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var column := VBoxContainer.new()
-	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(column)
-
-	var title := Label.new()
-	title.text = "%d  %s  (%d)" % [index + 1, spell.display_name, spell.mana_cost]
-	title.add_theme_color_override("font_color", spell.color.lerp(Color.WHITE, 0.4))
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(title)
-
-	var cooldown := ProgressBar.new()
-	cooldown.max_value = 1.0
-	cooldown.show_percentage = false
-	cooldown.custom_minimum_size = Vector2(0, 4)
-	cooldown.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(cooldown)
-	_cooldown_bars.append(cooldown)
-	_slot_panels.append(panel)
-	return panel
-
-
-func _on_spell_selected(index: int) -> void:
-	for i in _slot_styles.size():
-		_slot_styles[i].border_color = SLOT_SELECTED if i == index else SLOT_BORDER

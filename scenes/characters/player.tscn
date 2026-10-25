@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/player/model_animator.gd" id="8_animator"]
 [ext_resource type="PackedScene" path="res://assets/models/personajes/nigromante/nigromante.glb" id="9_modelo"]
 [ext_resource type="Script" path="res://scripts/systems/mana.gd" id="10_mana"]
+[ext_resource type="Script" path="res://scripts/systems/progression.gd" id="11_progression"]
 
 [sub_resource type="CapsuleShape3D" id="Shape_cuerpo"]
 radius = 0.35
@@ -20,7 +21,7 @@ collision_layer = 2
 collision_mask = 9
 script = ExtResource("1_player")
 melee_cooldown = 0.9
-spells = Array[ExtResource("2_spelldata")]([ExtResource("3_dardo"), ExtResource("4_calavera")])
+known_spells = Array[ExtResource("2_spelldata")]([ExtResource("3_dardo"), ExtResource("4_calavera")])
 projectile_scene = ExtResource("5_proyectil")
 minion_scene = ExtResource("6_esqueleto")
 
@@ -38,6 +39,9 @@ regen_delay = 4.0
 script = ExtResource("10_mana")
 max_mana = 100
 regen_per_second = 5.0
+
+[node name="Progression" type="Node" parent="."]
+script = ExtResource("11_progression")
 
 [node name="Visual" type="Node3D" parent="." node_paths=PackedStringArray("animation_player")]
 script = ExtResource("8_animator")

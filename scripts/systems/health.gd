@@ -14,6 +14,8 @@ signal died
 @export var regen_delay: float = 0.0
 
 var current: int
+## Quién hizo el último daño (para dar experiencia o botín a quien lo mató).
+var last_source: Node
 
 var is_dead: bool:
 	get:
@@ -50,6 +52,7 @@ func take_damage(amount: int, source: Node = null) -> void:
 	if is_dead:
 		return
 	_since_damage = 0.0
+	last_source = source
 	current = maxi(current - amount, 0)
 	damaged.emit(amount, source)
 	if current == 0:
