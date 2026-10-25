@@ -5,6 +5,7 @@ extends StaticBody3D
 
 @export var respawn_time: float = 5.0
 @export var experience_reward: int = 30
+@export var loot: LootTable
 
 @onready var health: Health = $Health
 @onready var visual: Node3D = $Visual
@@ -38,6 +39,7 @@ func _on_damaged(amount: int, source: Node) -> void:
 
 func _on_died() -> void:
 	_reward_killer()
+	_drop_loot()
 	$Colision.set_deferred("disabled", true)
 	if _wobble:
 		_wobble.kill()
@@ -59,3 +61,10 @@ func _reward_killer() -> void:
 		killer = killer.master
 	if is_instance_valid(killer) and killer.has_method("gain_experience"):
 		killer.gain_experience(experience_reward)
+
+
+func _drop_loot() -> void:
+	if loot == null:
+		return
+	for drop: Array in loot.roll():
+		WorldItem.drop(get_parent(), global_position, drop[0], drop[1], 0.9)

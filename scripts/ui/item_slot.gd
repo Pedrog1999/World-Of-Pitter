@@ -21,7 +21,7 @@ func _init(slot_size: float, placeholder: String = "") -> void:
 	_style = UiStyle.box(UiStyle.STONE_LIGHT, Color(0.24, 0.18, 0.11), 1, 0.0)
 	add_theme_stylebox_override("panel", _style)
 
-	_placeholder = UiStyle.label(placeholder, 10, Color(UiStyle.TEXT_DIM, 0.6))
+	_placeholder = UiStyle.label(placeholder, 9, Color(UiStyle.TEXT_DIM, 0.6))
 	_placeholder.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

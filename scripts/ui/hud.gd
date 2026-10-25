@@ -193,7 +193,7 @@ func _make_stats() -> Control:
 
 
 func _make_help(game_area: Control) -> void:
-	var help := UiStyle.label("WASD mover  ·  Ctrl golpe  ·  1-9 macro  ·  Clic izq. lanzar  ·  U usar item  ·  Rueda zoom", 13, Color(0.75, 0.75, 0.72, 0.8))
+	var help := UiStyle.label("WASD mover  ·  Ctrl golpe  ·  1-9 macro  ·  Clic izq. lanzar  ·  U usar  ·  E juntar  ·  T tirar  ·  Rueda zoom", 13, Color(0.75, 0.75, 0.72, 0.8))
 	if OS.is_debug_build():
 		help.text += "  ·  F9 recibir daño (prueba)"
 	game_area.add_child(help)

@@ -19,8 +19,10 @@ El juego arranca en **Villa Pitter**, un pueblo medieval oscuro.
 - Movimiento con **WASD/flechas en 8 direcciones**, relativo a los ejes del mundo (arriba = -Z).
 - **Cámara fija**: ángulo cenital sin rotación, solo zoom con la rueda del mouse.
 - **Sin salto y sin correr**: una sola velocidad de caminata.
-- **Controles**: Ctrl = golpe cuerpo a cuerpo; 1-4 = elegir hechizo (macros); clic izquierdo =
-  lanzar el hechizo elegido hacia el mouse; clic derecho = interactuar (tiendas, NPCs, etc.).
+- **Controles**: Ctrl = golpe cuerpo a cuerpo; 1-9 = elegir macro de hechizo; clic izquierdo =
+  lanzar el hechizo elegido hacia el mouse; clic derecho = interactuar (tiendas, NPCs, etc.);
+  U = usar el item elegido del inventario (o doble clic); E = juntar del suelo; T = tirar uno
+  (Shift+T = todo el casillero). F9 hace daño al jugador solo en builds de debug (para pruebas).
 - **Personaje principal: nigromante** (`assets/models/personajes/nigromante/nigromante.glb`).
   Pipeline: imagen de referencia → TRELLIS (IA imagen a 3D, licencia MIT) → Mixamo (esqueleto y
   animaciones) → `tools/blender/nigromante_mixamo_a_glb.py` (separa el bastón y lo ata a la mano,
@@ -62,7 +64,7 @@ Hacer en este orden; cada paso jugable, con commit + push al terminar:
      hechizos actual (`scripts/ui/hud.gd`) se integra a este panel.
 3. ✅ **Inventario y equipo**: grilla de items, oro, slots de equipo (arma, casco, armadura, escudo)
    que modifican stats. Items como `Resource` en `data/items/`.
-4. **Items en el mundo**: monstruos/muñecos que sueltan items, juntar con una tecla, tirar.
+4. ✅ **Items en el mundo**: monstruos/muñecos que sueltan items, juntar con una tecla, tirar.
 
 Después: la ciudad (Villa Pitter completa, faltan packs de props/naturaleza) y monstruos reales.
 

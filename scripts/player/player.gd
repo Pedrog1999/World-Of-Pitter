@@ -12,6 +12,8 @@ extends CharacterBody3D
 ## - Gana experiencia al matar; cada nivel sube la vida y el maná máximos.
 ## - Inventario y equipo: doble clic (o U) sobre un item lo usa o se lo pone. El equipo
 ##   suma daño, defensa, vida y maná.
+## - E: juntar el item más cercano del suelo. T: tirar uno del casillero elegido
+##   (Shift+T: todo el casillero).
 
 signal target_changed(target: Node3D)
 signal macro_selected(index: int)
@@ -26,6 +28,7 @@ signal respawned
 const ENEMY_LAYER := 1 << 3
 const CAST_HEIGHT := 1.2
 const MACRO_COUNT := 9
+const PICKUP_RANGE := 1.6
 
 @export var character_name: String = "Pitter"
 @export var class_title: String = "Nigromante"
@@ -138,6 +141,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		health.take_damage(25, null)
 	elif event.is_action_pressed("use_item"):
 		use_item(selected_slot)
+	elif event.is_action_pressed("pickup"):
+		pick_up_nearest()
+	elif event.is_action_pressed("drop_item"):
+		drop_item(selected_slot, -1 if (event as InputEventKey).shift_pressed else 1)
 	elif event.is_action_pressed("melee"):
 		_melee()
 	elif event.is_action_pressed("cast_spell"):
@@ -196,6 +203,48 @@ func use_item(index: int) -> void:
 			inventory.put_at(index, previous)
 
 
+## Junta el item del suelo más cercano dentro de PICKUP_RANGE.
+func pick_up_nearest() -> void:
+	if is_dead:
+		return
+	var nearest: WorldItem
+	var best := PICKUP_RANGE
+	for world_item: WorldItem in get_tree().get_nodes_in_group(WorldItem.GROUP):
+		var distance := Vector2(world_item.global_position.x - global_position.x,
+				world_item.global_position.z - global_position.z).length()
+		if distance <= best:
+			nearest = world_item
+			best = distance
+	if nearest == null:
+		return
+
+	var taken := nearest.amount
+	if nearest.item == null:
+		add_gold(taken)
+	else:
+		taken -= inventory.add_item(nearest.item, nearest.amount)
+	if taken <= 0:
+		_float_text("Inventario lleno", UiStyle.TEXT_DIM)
+		return
+	_float_text("+%d %s" % [taken, nearest.display_name()], UiStyle.GOLD)
+	nearest.amount -= taken
+	if nearest.amount <= 0:
+		nearest.queue_free()
+	else:
+		nearest.refresh_label()
+
+
+## Tira `amount` items del casillero al suelo, delante de los pies (-1 = todos).
+func drop_item(index: int, amount: int = 1) -> void:
+	var item := inventory.get_item(index)
+	if is_dead or item == null:
+		return
+	var dropped := inventory.get_amount(index) if amount < 0 else mini(amount, inventory.get_amount(index))
+	inventory.remove_at(index, dropped)
+	var front := global_position + visual.global_basis.z * 0.7
+	WorldItem.drop(get_parent(), front, item, dropped, 0.5)
+
+
 ## Se saca el equipo del slot y lo guarda en el inventario (si hay lugar).
 func unequip(slot: ItemData.Kind) -> void:
 	var item := equipment.get_equipped(slot)
@@ -215,7 +264,7 @@ func spell_damage_total(spell: SpellData) -> int:
 
 func gain_experience(amount: int) -> void:
 	progression.add_experience(amount)
-	DamageNumber.spawn_text(get_parent(), global_position + Vector3.UP * 2.3, "+%d exp" % amount, Color(0.62, 0.85, 0.4))
+	_float_text("+%d exp" % amount, Color(0.62, 0.85, 0.4))
 
 
 func add_gold(amount: int) -> void:
@@ -272,8 +321,12 @@ func _spawn_minions() -> void:
 		minions.append(minion)
 
 
+func _float_text(text: String, color: Color, height: float = 2.3) -> void:
+	DamageNumber.spawn_text(get_parent(), global_position + Vector3.UP * height, text, color)
+
+
 func _on_leveled_up(level: int) -> void:
-	DamageNumber.spawn_text(get_parent(), global_position + Vector3.UP * 2.8, "¡Nivel %d!" % level, UiStyle.GOLD)
+	_float_text("¡Nivel %d!" % level, UiStyle.GOLD, 2.8)
 	_recalculate_stats()
 	health.reset()
 	mana.refill()

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="LootTable" format=3]
+
+[ext_resource type="Script" path="res://scripts/systems/loot_table.gd" id="1_table"]
+[ext_resource type="Script" path="res://scripts/systems/loot_entry.gd" id="2_entry"]
+[ext_resource type="Resource" path="res://data/items/hueso_viejo.tres" id="3_hueso"]
+[ext_resource type="Resource" path="res://data/items/pocion_roja.tres" id="4_roja"]
+[ext_resource type="Resource" path="res://data/items/pocion_azul.tres" id="5_azul"]
+[ext_resource type="Resource" path="res://data/items/escudo_de_tablas.tres" id="6_escudo"]
+
+[sub_resource type="Resource" id="Entry_hueso"]
+script = ExtResource("2_entry")
+item = ExtResource("3_hueso")
+chance = 0.6
+min_amount = 1
+max_amount = 3
+
+[sub_resource type="Resource" id="Entry_roja"]
+script = ExtResource("2_entry")
+item = ExtResource("4_roja")
+chance = 0.3
+
+[sub_resource type="Resource" id="Entry_azul"]
+script = ExtResource("2_entry")
+item = ExtResource("5_azul")
+chance = 0.3
+
+[sub_resource type="Resource" id="Entry_escudo"]
+script = ExtResource("2_entry")
+item = ExtResource("6_escudo")
+chance = 0.15
+
+[resource]
+script = ExtResource("1_table")
+entries = Array[ExtResource("2_entry")]([SubResource("Entry_hueso"), SubResource("Entry_roja"), SubResource("Entry_azul"), SubResource("Entry_escudo")])
+gold_min = 3
+gold_max = 12

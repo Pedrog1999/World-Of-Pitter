@@ -1,12 +1,13 @@
 class_name Minimap
 extends Control
 ## Minimapa: una cámara ortográfica mira el mundo desde arriba (norte = arriba) con su
-## propio ambiente iluminado, y encima se dibujan puntos para el jugador, sus esbirros
-## y los enemigos.
+## propio ambiente iluminado, y encima se dibujan puntos para el jugador, sus esbirros,
+## los enemigos y los items del suelo.
 
 const PLAYER_COLOR := Color(0.45, 1.0, 0.35)
 const MINION_COLOR := Color(0.86, 0.83, 0.72)
 const ENEMY_COLOR := Color(0.9, 0.25, 0.2)
+const ITEM_COLOR := Color(0.93, 0.76, 0.38)
 
 ## Metros de mundo que entran de arriba a abajo.
 @export var view_size: float = 40.0
@@ -70,6 +71,8 @@ func _make_environment() -> Environment:
 func _draw_markers() -> void:
 	var center := _overlay.size * 0.5
 	var pixels_per_meter := _overlay.size.y / view_size
+	for world_item: Node3D in get_tree().get_nodes_in_group(WorldItem.GROUP):
+		_draw_dot(world_item.global_position, center, pixels_per_meter, ITEM_COLOR, 1.8)
 	for enemy: Node3D in get_tree().get_nodes_in_group("enemigos"):
 		var enemy_health := Health.of(enemy)
 		if enemy_health and not enemy_health.is_dead:
